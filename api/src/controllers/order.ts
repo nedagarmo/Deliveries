@@ -6,11 +6,11 @@ import logging from './../config/logging';
 
 const NAMESPACE = 'OrderController';
 
-const createOrder = (req: Request, res: Response, next: NextFunction) => {
+const createOrder = async (req: Request, res: Response, next: NextFunction) => {
     try {
         const application = new orderApplication();
-        const result: boolean = application.newOrder(req.body);
-        if (result) return res.status(400).json({ message: `Incorrect data provided.` });
+        const result: boolean = await application.newOrder(req.body);
+        if (!result) return res.status(400).json({ message: `Incorrect data provided.` });
 
         return res.status(200).json({ message: 'Success!' });
     } catch (error) {

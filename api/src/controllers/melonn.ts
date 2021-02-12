@@ -16,7 +16,7 @@ const listShippingMethod = async (req: Request, res: Response, next: NextFunctio
 
 const getShippingMethod = async (req: Request, res: Response, next: NextFunction) => {
     try {
-        const shippingMethod = await service.getShippingMethod(req.params.id);
+        const shippingMethod = await service.getShippingMethod(Number(req.params.id));
         if (shippingMethod == null) return res.status(404).json({ message: `Shipping method not found` });
 
         return res.status(200).json(shippingMethod);

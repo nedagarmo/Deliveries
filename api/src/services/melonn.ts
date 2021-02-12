@@ -21,7 +21,7 @@ export default class MelonnService {
             });
     };
 
-    getShippingMethod = async (id: string) => {
+    getShippingMethod = async (id: number) => {
         return await axios
             .get(`${config.melonn.url}/shipping-methods/${id}`, this.OPTIONS)
             .then((response) => {

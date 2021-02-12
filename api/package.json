@@ -4,6 +4,7 @@
   "description": "Sistema de entrega de mercancia basado en la logica de negocio de Melonn",
   "main": "src/server.ts",
   "scripts": {
+    "start": "node dist/server.js",
     "dev": "nodemon src/server.ts",
     "build": "rm -frv dist/ && npx prettier --write src/ && npx tsc",
     "test": "npm test"

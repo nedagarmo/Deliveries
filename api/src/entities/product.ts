@@ -1,3 +1,3 @@
 export default class ProductModel {
-    constructor(private name: string, private qty: number, private weight: number) {}
+    constructor(public name: string, public qty: number, public weight: number) {}
 }

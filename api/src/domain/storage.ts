@@ -1,7 +1,7 @@
 import order from './../entities/order';
 
 export default class Storage {
-    static orders: Array<order>;
+    static orders: Array<order> = Array();
 
     getOrders() {
         return Storage.orders;
