@@ -5,6 +5,7 @@ import logging from './config/logging';
 import config from './config/config';
 import healthRoutes from './routes/health';
 import orderRoutes from './routes/order';
+import melonnRoutes from './routes/melonn';
 
 const NAMESPACE = 'Server';
 const router = express();
@@ -26,9 +27,9 @@ router.use((req, res, next) => {
 router.use(bodyParser.urlencoded({ extended: true }));
 router.use(bodyParser.json());
 
-/** Rules of our API */
+/** Rules of API */
 router.use((req, res, next) => {
-    res.header('Access-Control-Allow-Origin', '*');
+    res.header('Access-Control-Allow-Origin', 'localhost:3000');
     res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
 
     if (req.method == 'OPTIONS') {
@@ -39,9 +40,10 @@ router.use((req, res, next) => {
     next();
 });
 
-/** Routes go here */
-router.use('/api/health', healthRoutes);
-router.use('/api/orders', orderRoutes);
+/** Routes v1 */
+router.use('/api/v1/health', healthRoutes);
+router.use('/api/v1/orders', orderRoutes);
+router.use('/api/v1/melonn', melonnRoutes);
 
 /** Error handling */
 router.use((req, res, next) => {
