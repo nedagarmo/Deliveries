@@ -1,8 +1,10 @@
 import product from '../entities/product';
 import order from './../entities/order';
 import melonnService from './../services/melonn';
+import logging from './../config/logging';
 
 export default class OrderApplication {
+    private NAMESPACE = 'OrderApplication';
     private offDays: Array<string>;
 
     constructor() {
@@ -21,7 +23,7 @@ export default class OrderApplication {
 
             //offDays.push('2021-02-12');
             const isTodayABusinessDay = this.isBusinessDay(nowDateTime);
-            const tenNextBusinessDays = this.getWorkDays(nowDateTime, 10);
+            const nextBusinessDays = await this.getWorkDays(nowDateTime, 10);
 
             const orderWeight = o.productList.reduce((acc: number, p: product) => {
                 return acc + p.weight;
@@ -35,12 +37,15 @@ export default class OrderApplication {
                 const fromTimeOfDay = shippingMethod.rules.availability.byRequestTime.fromTimeOfDay;
                 const toTimeOfDay = shippingMethod.rules.availability.byRequestTime.toTimeOfDay;
 
+                let workingCase: any = undefined;
                 switch (dayType) {
                     case 'ANY':
-                        if (this.isValidTimeOfDay(nowDateTime, fromTimeOfDay, toTimeOfDay)) this.calculatePromises();
+                        if (this.isValidTimeOfDay(nowDateTime, fromTimeOfDay, toTimeOfDay))
+                            workingCase = this.getCaseThatApplies(shippingMethod.rules.promisesParameters.cases, isTodayABusinessDay, nowDateTime);
                         break;
                     case 'BUSINESS':
-                        if (isTodayABusinessDay && this.isValidTimeOfDay(nowDateTime, fromTimeOfDay, toTimeOfDay)) this.calculatePromises();
+                        if (isTodayABusinessDay && this.isValidTimeOfDay(nowDateTime, fromTimeOfDay, toTimeOfDay))
+                            workingCase = this.getCaseThatApplies(shippingMethod.rules.promisesParameters.cases, isTodayABusinessDay, nowDateTime);
                         break;
                     case 'NON-BUSINESS':
                         break;
@@ -49,10 +54,24 @@ export default class OrderApplication {
                     default:
                         break;
                 }
+
+                if (workingCase != undefined) {
+                    [o.packPromiseMin, o.packPromiseMax] = this.calculatePromise(workingCase.packPromise, nowDateTime, nextBusinessDays);
+                    [o.shipPromiseMin, o.shipPromiseMax] = this.calculatePromise(workingCase.shipPromise, nowDateTime, nextBusinessDays);
+                    [o.deliveryPromiseMin, o.deliveryPromiseMax] = this.calculatePromise(workingCase.deliveryPromise, nowDateTime, nextBusinessDays);
+                    [o.readyPickupPromiseMin, o.readyPickupPromiseMax] = this.calculatePromise(
+                        workingCase.readyPickUpPromise,
+                        nowDateTime,
+                        nextBusinessDays
+                    );
+                }
             }
+
+            console.log(o);
 
             return o.save();
         } catch (error) {
+            logging.error(this.NAMESPACE, `METHOD: [newOrder]`, error);
             return false;
         }
     };
@@ -76,6 +95,74 @@ export default class OrderApplication {
 
     dateToStringFormat = (aDate: Date) => `${aDate.getFullYear()}-${String(aDate.getMonth() + 1).padStart(2, '0')}-${aDate.getDate()}`;
 
-    // Pending
-    calculatePromises = () => true;
+    getCaseThatApplies = (cases: Array<any>, isTodayABusinessDay: boolean, nowDateTime: Date) => {
+        cases
+            .sort((a, b) => (a.priority > b.priority ? 1 : -1))
+            .forEach((element) => {
+                const dayType = element.condition.byRequestTime.dayType;
+                const fromTimeOfDay = element.condition.byRequestTime.fromTimeOfDay;
+                const toTimeOfDay = element.condition.byRequestTime.toTimeOfDay;
+
+                switch (dayType) {
+                    case 'ANY':
+                        if (this.isValidTimeOfDay(nowDateTime, fromTimeOfDay, toTimeOfDay)) return element;
+                        break;
+                    case 'BUSINESS':
+                        if (isTodayABusinessDay && this.isValidTimeOfDay(nowDateTime, fromTimeOfDay, toTimeOfDay)) return element;
+                        break;
+                    case 'NON-BUSINESS':
+                        break;
+                    case 'WEEKEND':
+                        break;
+                    default:
+                        break;
+                }
+            });
+
+        return null;
+    };
+
+    calculatePromise = (pack: any, nowDateTime: Date, nextBusinessDays: Array<string>) => {
+        const minType = pack.min.type;
+        const minDeltaHours = pack.min.DeltaHours;
+        const minDeltaBusinessDays = pack.min.minDeltaBusinessDays;
+        const minTimeOfDay = pack.min.TimeOfDay;
+
+        const maxType = pack.max.type;
+        const maxDeltaHours = pack.max.DeltaHours;
+        const maxDeltaBusinessDays = pack.max.minDeltaBusinessDays;
+        const maxTimeOfDay = pack.max.TimeOfDay;
+
+        return [
+            this.getPromiseDate(minType, nowDateTime, minDeltaHours, nextBusinessDays, minDeltaBusinessDays, minTimeOfDay),
+            this.getPromiseDate(maxType, nowDateTime, maxDeltaHours, nextBusinessDays, maxDeltaBusinessDays, maxTimeOfDay)
+        ];
+    };
+
+    getPromiseDate = (
+        type: string,
+        nowDateTime: Date,
+        deltaHours: number,
+        nextBusinessDays: Array<string>,
+        deltaBusinessDays: number,
+        timeOfDay: number
+    ) => {
+        let datePack = null as any;
+
+        switch (type) {
+            case 'NULL':
+                break;
+            case 'DELTA-HOURS':
+                datePack = nowDateTime.setHours(nowDateTime.getHours() + deltaHours);
+                break;
+            case 'DELTA-BUSINESSDAYS':
+                datePack = new Date(nextBusinessDays[deltaBusinessDays - 1]);
+                datePack.setHours(timeOfDay);
+                break;
+            default:
+                break;
+        }
+
+        return datePack;
+    };
 }

@@ -43,6 +43,15 @@ export default class OrderModel {
         data.productList.forEach((element: product) => {
             this.productList.push(element);
         });
+
+        this.packPromiseMin = null as any;
+        this.packPromiseMax = null as any;
+        this.shipPromiseMin = null as any;
+        this.shipPromiseMax = null as any;
+        this.deliveryPromiseMin = null as any;
+        this.deliveryPromiseMax = null as any;
+        this.readyPickupPromiseMin = null as any;
+        this.readyPickupPromiseMax = null as any;
     }
 
     private generateIdentifier = (): number => {
