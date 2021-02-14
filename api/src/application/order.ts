@@ -37,7 +37,7 @@ export default class OrderApplication {
                 const fromTimeOfDay = shippingMethod.rules.availability.byRequestTime.fromTimeOfDay;
                 const toTimeOfDay = shippingMethod.rules.availability.byRequestTime.toTimeOfDay;
 
-                let workingCase: any = undefined;
+                let workingCase: any = null;
                 switch (dayType) {
                     case 'ANY':
                         if (this.isValidTimeOfDay(nowDateTime, fromTimeOfDay, toTimeOfDay))
@@ -55,7 +55,7 @@ export default class OrderApplication {
                         break;
                 }
 
-                if (workingCase != undefined) {
+                if (workingCase != null) {
                     [o.packPromiseMin, o.packPromiseMax] = this.calculatePromise(workingCase.packPromise, nowDateTime, nextBusinessDays);
                     [o.shipPromiseMin, o.shipPromiseMax] = this.calculatePromise(workingCase.shipPromise, nowDateTime, nextBusinessDays);
                     [o.deliveryPromiseMin, o.deliveryPromiseMax] = this.calculatePromise(workingCase.deliveryPromise, nowDateTime, nextBusinessDays);
@@ -66,8 +66,6 @@ export default class OrderApplication {
                     );
                 }
             }
-
-            console.log(o);
 
             return o.save();
         } catch (error) {
@@ -96,19 +94,26 @@ export default class OrderApplication {
     dateToStringFormat = (aDate: Date) => `${aDate.getFullYear()}-${String(aDate.getMonth() + 1).padStart(2, '0')}-${aDate.getDate()}`;
 
     getCaseThatApplies = (cases: Array<any>, isTodayABusinessDay: boolean, nowDateTime: Date) => {
+        let c: any = null;
         cases
-            .sort((a, b) => (a.priority > b.priority ? 1 : -1))
-            .forEach((element) => {
+            .sort((a: any, b: any) => (a.priority > b.priority ? 1 : -1))
+            .some((element: any) => {
                 const dayType = element.condition.byRequestTime.dayType;
                 const fromTimeOfDay = element.condition.byRequestTime.fromTimeOfDay;
                 const toTimeOfDay = element.condition.byRequestTime.toTimeOfDay;
 
                 switch (dayType) {
                     case 'ANY':
-                        if (this.isValidTimeOfDay(nowDateTime, fromTimeOfDay, toTimeOfDay)) return element;
+                        if (this.isValidTimeOfDay(nowDateTime, fromTimeOfDay, toTimeOfDay)) {
+                            c = element;
+                            return true;
+                        }
                         break;
                     case 'BUSINESS':
-                        if (isTodayABusinessDay && this.isValidTimeOfDay(nowDateTime, fromTimeOfDay, toTimeOfDay)) return element;
+                        if (isTodayABusinessDay && this.isValidTimeOfDay(nowDateTime, fromTimeOfDay, toTimeOfDay)) {
+                            c = element;
+                            return true;
+                        }
                         break;
                     case 'NON-BUSINESS':
                         break;
@@ -119,19 +124,19 @@ export default class OrderApplication {
                 }
             });
 
-        return null;
+        return c;
     };
 
-    calculatePromise = (pack: any, nowDateTime: Date, nextBusinessDays: Array<string>) => {
-        const minType = pack.min.type;
-        const minDeltaHours = pack.min.DeltaHours;
-        const minDeltaBusinessDays = pack.min.minDeltaBusinessDays;
-        const minTimeOfDay = pack.min.TimeOfDay;
+    calculatePromise = (promise: any, nowDateTime: Date, nextBusinessDays: Array<string>) => {
+        const minType = promise.min.type;
+        const minDeltaHours = promise.min.deltaHours;
+        const minDeltaBusinessDays = promise.min.deltaBusinessDays;
+        const minTimeOfDay = promise.min.timeOfDay;
 
-        const maxType = pack.max.type;
-        const maxDeltaHours = pack.max.DeltaHours;
-        const maxDeltaBusinessDays = pack.max.minDeltaBusinessDays;
-        const maxTimeOfDay = pack.max.TimeOfDay;
+        const maxType = promise.max.type;
+        const maxDeltaHours = promise.max.deltaHours;
+        const maxDeltaBusinessDays = promise.max.deltaBusinessDays;
+        const maxTimeOfDay = promise.max.timeOfDay;
 
         return [
             this.getPromiseDate(minType, nowDateTime, minDeltaHours, nextBusinessDays, minDeltaBusinessDays, minTimeOfDay),
@@ -147,13 +152,14 @@ export default class OrderApplication {
         deltaBusinessDays: number,
         timeOfDay: number
     ) => {
-        let datePack = null as any;
+        let datePack: Date = null as any;
 
         switch (type) {
             case 'NULL':
                 break;
             case 'DELTA-HOURS':
-                datePack = nowDateTime.setHours(nowDateTime.getHours() + deltaHours);
+                datePack = nowDateTime;
+                datePack.setHours(datePack.getHours() + deltaHours);
                 break;
             case 'DELTA-BUSINESSDAYS':
                 datePack = new Date(nextBusinessDays[deltaBusinessDays - 1]);
