@@ -4,7 +4,7 @@ import React, { useEffect } from 'react';
 import { BrowserRouter, Route, Switch, RouteComponentProps } from 'react-router-dom';
 import logging from './config/logging';
 import routes from './config/routes';
-import { Container, Nav, Navbar, NavDropdown } from 'react-bootstrap';
+import { Container, Nav, Navbar } from 'react-bootstrap';
 
 const Application: React.FunctionComponent<{}> = props => {
     useEffect(() => {
@@ -25,7 +25,7 @@ const Application: React.FunctionComponent<{}> = props => {
                     </Nav>
                 </Navbar.Collapse>
             </Navbar>
-            <Container>
+            <Container className="mt-5 mb-5">
                 <BrowserRouter>
                     <Switch>
                         {routes.map((route, index) => {

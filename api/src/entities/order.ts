@@ -10,6 +10,7 @@ export default class OrderModel {
     buyerEmail: string;
 
     shippingMethod: number;
+    shippingMethodName!: string;
     shippingAddress: string;
     shippingCity: string;
     shippingRegion: string;
@@ -24,6 +25,7 @@ export default class OrderModel {
     deliveryPromiseMax!: Date;
     readyPickupPromiseMin!: Date;
     readyPickupPromiseMax!: Date;
+    creationDate: Date;
 
     constructor(data: any) {
         this.id = this.generateIdentifier();
@@ -34,6 +36,8 @@ export default class OrderModel {
         this.buyerEmail = data.buyerEmail;
 
         this.shippingMethod = data.shippingMethod;
+        this.shippingMethodName = '';
+
         this.shippingAddress = data.shippingAddress;
         this.shippingCity = data.shippingCity;
         this.shippingRegion = data.shippingRegion;
@@ -52,6 +56,8 @@ export default class OrderModel {
         this.deliveryPromiseMax = null as any;
         this.readyPickupPromiseMin = null as any;
         this.readyPickupPromiseMax = null as any;
+
+        this.creationDate = new Date();
     }
 
     private generateIdentifier = (): number => {

@@ -17,6 +17,7 @@ export default class OrderApplication {
             const o: order = new order(payload);
 
             const shippingMethod = await service.getShippingMethod(o.shippingMethod);
+            o.shippingMethodName = shippingMethod.name;
             this.offDays = await service.listOffDays();
 
             const nowDateTime = new Date();

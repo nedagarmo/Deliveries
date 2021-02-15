@@ -1,6 +1,7 @@
 const config = {
     defaults: {
-        namespace: 'Application'
+        namespace: 'Application',
+        apiUri: 'http://localhost:8000/api/v1'
     }
 }
 
